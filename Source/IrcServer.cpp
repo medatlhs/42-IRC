@@ -11,10 +11,25 @@ IrcServer::IrcServer(int port, std::string passw) : servPort(port), servPass(pas
 }
 
 IrcServer::~IrcServer() {
-    std::cout << "IrcServer got destroted\n";
+    std::cout << "IrcServer got destroyed\n";
+}
+// USER <username> <mode> <unused> :<realname> 
+void IrcServer::parseCommand(int clientSocket_) {
+    std::vector<std::string> cmdParams;
+    std::string clientMsj = this->clients.at(clientSocket_)->getBuffer();
+    std::stringstream ss(clientMsj);
+    std::string command;
+    if (!(ss >> command))
+        std::cout << "Error: Empty Msj!\n"; // TO DO
+    std::cout << "Command is: " << command << std::endl;
+    while (ss >> command && strcmp(command.c_str(), ":"))
+        cmdParams.push_back(command);
+    if (!strcmp(command.c_str(), ":"))
+        
 }
 
 void IrcServer::setupServer() {
+    (void)this->servPort;
     if ((this->servSocket = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
         std::cerr << "Error: Building a socket!"; exit(1);
     }
@@ -47,8 +62,8 @@ void IrcServer::handleDataReq(int clientSocket_) {
         // Remove client from clients // TO DO
     } else {
         try {
-            this->clients.at(clientSocket_)->_clientBuffer.append(buffer);
-            std::cout << this->clients.at(clientSocket_)->_clientBuffer << std::endl;
+            this->clients.at(clientSocket_)->setBuffer(buffer);
+            parseCommand(clientSocket_);
         } catch(const std::exception& e) {
             std::cerr << e.what() << '\n';
         }

@@ -7,10 +7,11 @@
 #include <netinet/in.h> // sockaddress_in
 #include <vector>
 #include <unistd.h>
+#include <sstream>
 #include "Client.hpp"
 #include "Channel.hpp"
 
-#define PORT 5050
+#define PORT 8080
 
 class IrcServer {
     private:

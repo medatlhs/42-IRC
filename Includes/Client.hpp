@@ -1,7 +1,7 @@
 #pragma once
 #include <string>
 
-enum ClientState {ANNONYMOUS, REGISTERED, DISCONNECTED};
+enum ClientState {ANNONYMOUS, LOGED, REGISTERED, DISCONNECTED};
 
 class Client {
     private:
@@ -9,9 +9,9 @@ class Client {
         std::string _nickName;
         std::string _userName;
         std::string _realName;
+        std::string _clientBuffer;
     public:
         ClientState _state;
-        std::string _clientBuffer;
 
         Client(int clientSocket);
         
@@ -19,7 +19,9 @@ class Client {
         void setNickName(const std::string &nickName);
         void setUserName(const std::string &userName);
         void setRealName(const std::string &realName);
+        void setBuffer(const std::string &newData);
         std::string &getNickName(void);
         std::string &getUserName(void);
         std::string &getRealName(void);
+        std::string &getBuffer(void);
 };
