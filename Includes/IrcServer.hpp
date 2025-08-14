@@ -11,7 +11,7 @@
 #include "Client.hpp"
 #include "Channel.hpp"
 
-#define PORT 8080
+#define PORT 6060
 
 class IrcServer {
     private:
@@ -20,8 +20,8 @@ class IrcServer {
         fd_set      masterfds;
         std::string servPass;
 
-        std::map<int, Client*>          clients;
-        std::map<std::string, Channel*> channels;
+        std::map<int, Client*> clients;
+        std::map<std::string, Channel *> channels;
 
     public:
         IrcServer();

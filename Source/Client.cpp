@@ -1,11 +1,51 @@
 #include "../Includes/Client.hpp"
 
-Client::Client(int clientSocket) : _clientSocket(clientSocket) { }
+Client::Client(int clientSocket) : _clientSocket(clientSocket), _nickName("guest") { }
 
-void Client::setBuffer(const std::string &newData) {
-    this->_clientBuffer.append(newData);
+std::string &Client::getNickName(void) { return _nickName; }
+std::string &Client::getUserName(void) { return _userName; }
+std::string &Client::getRealName(void) { return _realName; }
+std::string &Client::getBuffer(void) { return _clientBuffer; }
+
+// void Client::setNickName(const std::string&NickName) { this->_nickName = NickName; }
+// void Client::setUserName(const std::string&userName) { this->_userName = userName; }
+// void Client::setRealName(const std::string&realName) { this->_realName = realName; }
+void Client::setBuffer(std::string newData) { this->_clientBuffer.append(newData); }
+
+void Client::clearBuffer() { this->_clientBuffer.clear(); }
+
+//:<server_hostname> <numeric_code> <recipient_nickname> <parameters> :<human_readable_message>
+void Client::sendError(int numiCode, std::string nickN, std::string params, std::string fullMsj) {
+    std::string message = ":thc-server.com ";
+    message.append(std::to_string(numiCode)).append(" ").append(nickN).append(" ");
+    message.append(params).append(" :").append(fullMsj);
+    std::cout << "mesj >" << message << std::endl;
+    ssize_t bytesSent = send(this->_clientSocket, message.c_str(), message.length(), 0);
+    if (bytesSent < 0)
+        perror("send failed");
+    else {
+        std::cout << "successfully sent\n";
+    }
+    std::cout << "Bytes sent " << bytesSent << std::endl;
+    std::cout << message.length() << std::endl;
+    // ssize_t bytesSent = std::send(this->_clientSocket, message, sizeof(message), 0);
 }
 
-std::string &Client::getBuffer(void) {
-    return _clientBuffer;
+void Client::setNickName(std::vector<std::string> &allParams, std::map<int, Client*> &clients) {
+    if (allParams.size() != 1)
+        return sendError(ERR_NEEDMOREPARAMS, _nickName, "NICK", "Not enough parameters!\n");
+    std::string nickName = allParams.at(0);
+    if (nickName.length() > 10) {
+            return sendError(ERR_ERRONEUSNICKNAME, _nickName, "NICK", TOOLONG);
+    } else if (isdigit(nickName[0]))
+        return sendError(ERR_ERRONEUSNICKNAME, _nickName, "NICK", DIGITATSTART);
+    std::string notAllowed = "#@:,!&?.";
+    for (size_t i = 0; i < nickName.length(); i++) {
+        if (notAllowed.find(nickName.at(i)) != std::string::npos)
+            return sendError(ERR_ERRONEUSNICKNAME, _nickName, "NICK", "Invalid character!\n");
+    }
+    for (size_t i = 0; i < clients.size(); i++)
+        if (clients.at(i)->getNickName() == nickName)
+            return sendError(ERR_NICKNAMEINUSE, _nickName, "NICK", "Nick name is already!\n");
+    this->_nickName = nickName;
 }

@@ -15,17 +15,18 @@ IrcServer::~IrcServer() {
 }
 // USER <username> <mode> <unused> :<realname> 
 void IrcServer::parseCommand(int clientSocket_) {
-    std::vector<std::string> cmdParams;
-    std::string clientMsj = this->clients.at(clientSocket_)->getBuffer();
-    std::stringstream ss(clientMsj);
+    std::vector<std::string> allParams;
+    Client *client = this->clients.at(clientSocket_);
+    std::stringstream ss(client->getBuffer());
     std::string command;
     if (!(ss >> command))
-        std::cout << "Error: Empty Msj!\n"; // TO DO
-    std::cout << "Command is: " << command << std::endl;
-    while (ss >> command && strcmp(command.c_str(), ":"))
-        cmdParams.push_back(command);
-    if (!strcmp(command.c_str(), ":"))
-        
+        std::cout << "Error: Client provided an empty command!\n"; // TO DO
+    std::string param;
+    while (ss >> param)
+        allParams.push_back(param);
+    if (command == "NICK")
+        client->setNickName(allParams, clients);
+    client->clearBuffer();
 }
 
 void IrcServer::setupServer() {
@@ -51,22 +52,25 @@ void IrcServer::setupServer() {
 }
 
 void IrcServer::handleDataReq(int clientSocket_) {
+    std::cout << "handled one: " << clientSocket_ << std::endl;
     char buffer[1024] = {0};
     ssize_t recvBytes = recv(clientSocket_, &buffer, sizeof(buffer), 0);
-    if (recvBytes<0) {
+    if (recvBytes < 0) {
         std::cerr << "Error: Receiving data!\n"; exit(1);
-    } else if (recvBytes == 0) { // client dicoonnected
+    } else if (!recvBytes) { // client dicoonnected
         std::cout << "client disconected!\n";
         close(clientSocket_);
         FD_CLR(clientSocket_, &this->masterfds);
         // Remove client from clients // TO DO
     } else {
         try {
-            this->clients.at(clientSocket_)->setBuffer(buffer);
-            parseCommand(clientSocket_);
+            std::cout << clientSocket_ << std::endl;
+            Client *myclient = this->clients.at(clientSocket_);
+            myclient->setBuffer(buffer);
         } catch(const std::exception& e) {
-            std::cerr << e.what() << '\n';
+            std::cerr << e.what() << "here\n";
         }
+        parseCommand(clientSocket_);
     }
 }
 
@@ -83,7 +87,7 @@ void IrcServer::startAccepting() {
             std::cout << "Error: select() failed!"; exit(1);
         }
         for (int i = 0; i < (maxfds + 1); i++) {
-            if (FD_ISSET(i, &readfds)) {
+            if (FD_ISSET(i, &readfds)) { // isin the set
                 if (i == this->servSocket) { // new connection on master socket
                     int clientSock = accept(this->servSocket, nullptr, nullptr);
                     if (clientSock < 0) {
@@ -93,7 +97,8 @@ void IrcServer::startAccepting() {
                     if (clientSock > maxfds)
                         maxfds = clientSock;
                     FD_SET(clientSock, &this->masterfds);
-                    Client *newClient = new Client(i);
+                    std::cout << "the scoket client: " << clientSock << std::endl;
+                    Client *newClient = new Client(clientSock);
                     newClient->_state = ANNONYMOUS;
                     this->clients.insert(std::make_pair(clientSock, newClient));
                 } else

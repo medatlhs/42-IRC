@@ -5,8 +5,8 @@
 
 class Channel {
     private:
-        std::string _channelName;
-        std::vector<Client*> _channelMembers;
+        // std::string _channelName;
+        // std::vector<Client*> _channelMembers;
     public:
         Channel();
 };
