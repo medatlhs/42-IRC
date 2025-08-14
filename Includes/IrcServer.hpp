@@ -20,7 +20,7 @@ class IrcServer {
         fd_set      masterfds;
         std::string servPass;
 
-        std::map<int, Client*> clients;
+        std::map<int, Client *> clients;
         std::map<std::string, Channel *> channels;
 
     public:

@@ -15,7 +15,7 @@
 #include "Client.hpp"
 #include "Channel.hpp"
 
-enum ClientState {ANNONYMOUS, LOGED, REGISTERED, DISCONNECTED};
+enum ClientState {ANNONYMOUS, NICK_SET, USER_SET, REGISTERED ,DISCONNECTED};
 
 class Client {
     private:
@@ -34,8 +34,7 @@ class Client {
         //setters and lfucking getters
         void setUserName(const std::string &userName);
         void setRealName(const std::string &realName);
-        void setBuffer(
-            std::string newData);
+        void setBuffer(std::string newData);
         void clearBuffer(void);
         std::string &getNickName(void);
         std::string &getUserName(void);

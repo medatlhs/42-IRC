@@ -10,7 +10,7 @@ std::string &Client::getBuffer(void) { return _clientBuffer; }
 // void Client::setNickName(const std::string&NickName) { this->_nickName = NickName; }
 // void Client::setUserName(const std::string&userName) { this->_userName = userName; }
 // void Client::setRealName(const std::string&realName) { this->_realName = realName; }
-void Client::setBuffer(std::string newData) { this->_clientBuffer.append(newData); }
+void Client::setBuffer(std::string newData) { clearBuffer(); this->_clientBuffer = newData; }
 
 void Client::clearBuffer() { this->_clientBuffer.clear(); }
 
@@ -23,29 +23,29 @@ void Client::sendError(int numiCode, std::string nickN, std::string params, std:
     ssize_t bytesSent = send(this->_clientSocket, message.c_str(), message.length(), 0);
     if (bytesSent < 0)
         perror("send failed");
-    else {
-        std::cout << "successfully sent\n";
-    }
-    std::cout << "Bytes sent " << bytesSent << std::endl;
-    std::cout << message.length() << std::endl;
-    // ssize_t bytesSent = std::send(this->_clientSocket, message, sizeof(message), 0);
 }
 
 void Client::setNickName(std::vector<std::string> &allParams, std::map<int, Client*> &clients) {
+    std::string cmd = "NICK";
     if (allParams.size() != 1)
-        return sendError(ERR_NEEDMOREPARAMS, _nickName, "NICK", "Not enough parameters!\n");
+        return sendError(ERR_NEEDMOREPARAMS, _nickName, cmd, MSJ_PARAM);
     std::string nickName = allParams.at(0);
     if (nickName.length() > 10) {
-            return sendError(ERR_ERRONEUSNICKNAME, _nickName, "NICK", TOOLONG);
+            return sendError(ERR_ERRONEUSNICKNAME, _nickName, cmd, MSJ_TOOLONG);
     } else if (isdigit(nickName[0]))
-        return sendError(ERR_ERRONEUSNICKNAME, _nickName, "NICK", DIGITATSTART);
+        return sendError(ERR_ERRONEUSNICKNAME, _nickName, cmd, MSJ_DIGITATSTART);
     std::string notAllowed = "#@:,!&?.";
     for (size_t i = 0; i < nickName.length(); i++) {
-        if (notAllowed.find(nickName.at(i)) != std::string::npos)
-            return sendError(ERR_ERRONEUSNICKNAME, _nickName, "NICK", "Invalid character!\n");
+        if (notAllowed.find(nickName[i]) != std::string::npos)
+            return sendError(ERR_ERRONEUSNICKNAME, _nickName, cmd, MSJ_INVALIDCHAR);
     }
-    for (size_t i = 0; i < clients.size(); i++)
-        if (clients.at(i)->getNickName() == nickName)
-            return sendError(ERR_NICKNAMEINUSE, _nickName, "NICK", "Nick name is already!\n");
+    std::map<int, Client*>::iterator it = clients.begin();
+    while (it != clients.end()) {
+        if (it->second->getNickName() == nickName)
+            return sendError(ERR_NICKNAMEINUSE, _nickName, cmd, MSJ_TAKENNICK);
+        it++;
+    }
+    if (this->_state == ClientState::ANNONYMOUS)
+        this->_state = ClientState::NICK_SET;
     this->_nickName = nickName;
 }
