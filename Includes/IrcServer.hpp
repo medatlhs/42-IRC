@@ -11,7 +11,7 @@
 #include "Client.hpp"
 #include "Channel.hpp"
 
-#define PORT 6060
+#define PORT 4040
 
 class IrcServer {
     private:
@@ -19,6 +19,7 @@ class IrcServer {
         int         servSocket;
         fd_set      masterfds;
         std::string servPass;
+        std::string _servName;
 
         std::map<int, Client *> clients;
         std::map<std::string, Channel *> channels;

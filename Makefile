@@ -6,7 +6,8 @@ SRC = main.cpp \
 
 INC = Includes/Channel.hpp \
 		Includes/Client.hpp \
-		Includes/IrcServer.hpp
+		Includes/IrcServer.hpp \
+		Includes/InformCodes.hpp
 
 OBJS = $(SRC:.cpp=.o)
 CXX = c++

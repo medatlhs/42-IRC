@@ -15,22 +15,34 @@
 #include "Client.hpp"
 #include "Channel.hpp"
 
-enum ClientState {ANNONYMOUS, NICK_SET, USER_SET, REGISTERED ,DISCONNECTED};
-
+enum ClientState { ANNONYMOUS, REGISTERED, DISCONNECTED };
+enum LoginStage { NOTHING_SET, NICK_SET, USER_SET };
 class Client {
     private:
         int         _clientSocket;
         std::string _nickName;
         std::string _userName;
-        std::string _realName;
+        std::string _fullName;
         std::string _clientBuffer;
+        std::string _mode;
+        std::string _unused;
     public:
         ClientState _state;
-
+        LoginStage  _stage;
         Client(int clientSocket);
 
         void setNickName(std::vector<std::string> &allParams, std::map<int, Client*> &clients);
-        void sendError(int numiCode, std::string nickN, std::string params, std::string fullMsj);
+        void registerUser(std::vector<std::string> &allParams, std::map<int, Client*> &clients);
+        std::string &genHostMask(void);
+
+
+        // Utils:
+        bool validateAscii(const std::string &input, const std::string &cmd);
+        void sendMsg(int numiCode, std::string nickN, std::string params, std::string fullMsj);
+        void displayAllInfo(void);
+
+
+
         //setters and lfucking getters
         void setUserName(const std::string &userName);
         void setRealName(const std::string &realName);

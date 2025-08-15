@@ -2,7 +2,7 @@
 #include "../Includes/Client.hpp"
 #include "../Includes/Channel.hpp"
 
-IrcServer::IrcServer() : servPort(PORT), servPass("default") { }
+IrcServer::IrcServer() : servPort(PORT), servPass("default"), _servName("server-mhachach") { }
 
 IrcServer::IrcServer(int port, std::string passw) : servPort(port), servPass(passw) {
     std::cout << "server is being created!\n";
@@ -31,6 +31,10 @@ void IrcServer::parseCommand(int clientSocket_) {
         allParams.push_back(param);
     if (command == "NICK")
         client->setNickName(allParams, clients);
+    else if (command == "USER")
+        client->registerUser(allParams, clients);
+    else if (command == "INFO")
+        client->displayAllInfo();
     client->clearBuffer();
 }
 
@@ -69,20 +73,22 @@ void IrcServer::startAccepting() {
         for (int i = 0; i < (maxfds + 1); i++) {
             if (FD_ISSET(i, &readyReadSet)) { // isin the set
                 if (i == this->servSocket) { // new connection on master socket
-                    int clientSock = accept(this->servSocket, nullptr, nullptr);
+                    sockaddr_in clientAddr;
+                    socklen_t   addrLen;
+                    int clientSock = accept(this->servSocket, (sockaddr *)&clientAddr, &addrLen);
                     if (clientSock < 0) {
                         std::cerr << "Error: Accepting a connection!", exit(1);
                     }
                     std::cout << "Detected a new connection\n";
+                    std::cout << "client ip: " << clientAddr.sin_addr.s_addr << std::endl;
                     if (clientSock > maxfds)
                         maxfds = clientSock;
                     FD_SET(clientSock, &this->masterfds);
-                    std::cout << "the scoket client: " << clientSock << std::endl;
                     Client *newClient = new Client(clientSock);
-                    newClient->_state = ClientState::ANNONYMOUS;
+                    newClient->_state = ANNONYMOUS;
+                    newClient->_stage = NOTHING_SET;
                     this->clients.insert(std::make_pair(clientSock, newClient));
                     std::string thegotenname = this->clients.at(clientSock)->getNickName();
-                    std::cout << thegotenname << std::endl;
                 } else {
                     this->handleDataReq(i);
                 }
@@ -98,8 +104,8 @@ void IrcServer::setupServer() {
         std::cerr << "Error: Building a socket!"; exit(1);
     }
     if (fcntl(this->servSocket, F_SETFL, O_NONBLOCK) < 0) {
-            std::cerr << "Error: Setting socket to non-blocking!" << std::endl;
-            exit(1);
+        std::cerr << "Error: Setting socket to non-blocking!" << std::endl;
+        exit(1);
     }
     sockaddr_in serverAddress;
     serverAddress.sin_family = AF_INET;
