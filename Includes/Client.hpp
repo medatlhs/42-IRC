@@ -26,30 +26,28 @@ class Client {
         std::string _clientBuffer;
         std::string _mode;
         std::string _unused;
-    public:
         ClientState _state;
         LoginStage  _stage;
+    public:
         Client(int clientSocket);
 
         void setNickName(std::vector<std::string> &allParams, std::map<int, Client*> &clients);
         void registerUser(std::vector<std::string> &allParams, std::map<int, Client*> &clients);
-        std::string &genHostMask(void);
-
-
-        // Utils:
+        // std::string genHostMask(void);
+        // Utils
         bool validateAscii(const std::string &input, const std::string &cmd);
         void sendMsg(int numiCode, std::string nickN, std::string params, std::string fullMsj);
         void displayAllInfo(void);
-
-
-
-        //setters and lfucking getters
-        void setUserName(const std::string &userName);
-        void setRealName(const std::string &realName);
-        void setBuffer(std::string newData);
         void clearBuffer(void);
+        //setters and lfucking getters
+        void setStage(LoginStage stage);
+        void setState(ClientState state);
+        void setBuffer(std::string newData);
         std::string &getNickName(void);
         std::string &getUserName(void);
         std::string &getRealName(void);
         std::string &getBuffer(void);
+        LoginStage  &getStage(void);
+        ClientState &getState(void);
+        
 };

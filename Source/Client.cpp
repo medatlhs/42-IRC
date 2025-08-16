@@ -7,11 +7,11 @@ std::string &Client::getUserName(void) { return _userName; }
 std::string &Client::getRealName(void) { return _fullName; }
 std::string &Client::getBuffer(void) { return _clientBuffer; }
 
-// void Client::setNickName(const std::string&NickName) { this->_nickName = NickName; }
-// void Client::setUserName(const std::string&userName) { this->_userName = userName; }
-// void Client::setRealName(const std::string&realName) { this->_realName = realName; }
 void Client::setBuffer(std::string newData) { clearBuffer(); this->_clientBuffer = newData; }
-
+void Client::setStage(LoginStage stage) { this->_stage = stage; }
+void Client::setState(ClientState state) { this->_state = state; }
+ClientState &Client::getState() { return _state; }
+LoginStage &Client::getStage() { return _stage; }
 void Client::clearBuffer() { this->_clientBuffer.clear(); }
 
 //:<server_hostname> <numeric_code> <recipient_nickname> <parameters> :<human_readable_message>
@@ -38,10 +38,8 @@ void Client::setNickName(std::vector<std::string>&allParams, std::map<int, Clien
     std::string cmd = "NICK";
     if (allParams.size() != 1)
         return sendMsg(ERR_NEEDMOREPARAMS, _nickName, cmd, msg_param);
-    std::string nickName = allParams.at(0);
-    if (nickName.length() > 10) {
-        return sendMsg(ERR_ERRONEUSNICKNAME, _nickName, cmd, msg_too_long);
-    } else if (isdigit(nickName[0])) {
+    std::string nickName = allParams.at(0).substr(0, 10);
+    if (isdigit(nickName[0])) {
         return sendMsg(ERR_ERRONEUSNICKNAME, _nickName, cmd, msg_digit_start);
     } else if (!validateAscii(nickName, cmd))
         return sendMsg(ERR_ERRONEUSNICKNAME, _nickName, cmd, msg_inva_char);
@@ -54,7 +52,6 @@ void Client::setNickName(std::vector<std::string>&allParams, std::map<int, Clien
     this->_nickName = nickName;
     if (this->_stage == USER_SET) { this->_state = REGISTERED; }
     else if (this->_stage == NOTHING_SET) { this->_stage =  NICK_SET; }
-
 }
 
 void Client::registerUser(std::vector<std::string>&allParams, std::map<int, Client*>&clients) {
@@ -91,14 +88,16 @@ void Client::registerUser(std::vector<std::string>&allParams, std::map<int, Clie
     this->_fullName = fullName.erase(0, 1);
     if (this->_stage == NICK_SET) {
         this->_state = REGISTERED;
-        // sendMsg();
+        // this->genHostMask();
     } else if (this->_stage == NOTHING_SET)
         this->_stage = USER_SET;
     std::cout << "User just got registered\n";
 }
 
-
-
+// std::string Client::genHostMask() {
+    
+//     std::string hostmask = 
+// }
 
 void Client::displayAllInfo(void) {
     std::cout << "---------------------------------------\n";

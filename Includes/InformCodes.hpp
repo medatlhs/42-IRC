@@ -29,5 +29,3 @@ enum ErrorCode {
 #define msg_invalid_topic "Invalid topic format!\n"
 #define msg_channel_locked "Channel is locked!\n"
 #define msg_no_join_permission "You don't have permission to join this channel!\n"
-
-

@@ -4,12 +4,6 @@
 
 IrcServer::IrcServer() : servPort(PORT), servPass("default"), _servName("server-mhachach") { }
 
-IrcServer::IrcServer(int port, std::string passw) : servPort(port), servPass(passw) {
-    std::cout << "server is being created!\n";
-    this->setupServer();
-    this->startAccepting();
-}
-
 IrcServer::~IrcServer() {
     std::cout << "IrcServer got destroyed\n";
 }
@@ -37,27 +31,7 @@ void IrcServer::parseCommand(int clientSocket_) {
         client->displayAllInfo();
     client->clearBuffer();
 }
-
-void IrcServer::handleDataReq(int clientSocket_) {
-    char buffer[1024] = {0};
-    ssize_t recvBytes = recv(clientSocket_, &buffer, sizeof(buffer), 0);
-    if (recvBytes <= 0) {
-        if (recvBytes == 0) { //client dicoonnected
-            std::cout << "client disconected!\n"; close(clientSocket_);
-            FD_CLR(clientSocket_, &this->masterfds);  // Remove client from clients // TO DO
-        } else
-            std::cerr << "Error: Receiving data!\n"; exit(1);
-    } else {
-        try {
-            Client *myclient = this->clients.at(clientSocket_);
-            myclient->setBuffer(buffer);
-        } catch(const std::exception& e) {
-            std::cerr << e.what() << "\n";
-        }
-        parseCommand(clientSocket_);
-    }
-}
-
+#include <arpa/inet.h>  // For inet_ntoa
 void IrcServer::startAccepting() {
     fd_set readyReadSet;
     FD_ZERO(&this->masterfds);
@@ -81,16 +55,37 @@ void IrcServer::startAccepting() {
                     }
                     std::cout << "Detected a new connection\n";
                     std::cout << "client ip: " << clientAddr.sin_addr.s_addr << std::endl;
+                    const char *ip = inet_ntoa(clientAddr.sin_addr);
+                    if (!ip)
+                        std::cout << "converting to ip fauiled!\n";
+                    std::cout << "the user ip is: " << ip << std::endl;
                     if (clientSock > maxfds)
                         maxfds = clientSock;
                     FD_SET(clientSock, &this->masterfds);
                     Client *newClient = new Client(clientSock);
-                    newClient->_state = ANNONYMOUS;
-                    newClient->_stage = NOTHING_SET;
+                    newClient->setStage(NOTHING_SET);
+                    newClient->setState(ANNONYMOUS);
                     this->clients.insert(std::make_pair(clientSock, newClient));
                     std::string thegotenname = this->clients.at(clientSock)->getNickName();
                 } else {
-                    this->handleDataReq(i);
+                    int clientSocket_ = i;
+                    char buffer[1024] = {0};
+                    ssize_t recvBytes = recv(clientSocket_, &buffer, sizeof(buffer), 0);
+                    if (recvBytes <= 0) {
+                        if (recvBytes == 0) { //client dicoonnected
+                            std::cout << "client disconected!\n"; close(clientSocket_);
+                            FD_CLR(clientSocket_, &this->masterfds);  // Remove client from clients // TO DO
+                        } else
+                        std::cerr << "Error: Receiving data!\n"; exit(1);
+                    } else {
+                        try {
+                            Client *myclient = this->clients.at(clientSocket_);
+                            myclient->setBuffer(buffer);
+                        } catch(const std::exception& e) {
+                            std::cerr << e.what() << "\n";
+                        }
+                        parseCommand(clientSocket_);
+                    }
                 }
             }
         }

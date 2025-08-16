@@ -26,7 +26,7 @@ class IrcServer {
 
     public:
         IrcServer();
-        IrcServer(int port, std::string passw);
+        // IrcServer(int port, std::string passw);
 
         void setupServer(void);
         void startAccepting(void);
