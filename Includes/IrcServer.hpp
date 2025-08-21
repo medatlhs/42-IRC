@@ -4,35 +4,56 @@
 #include <map>
 #include <sys/socket.h>
 #include <iostream>
-#include <netinet/in.h> // sockaddress_in
+#include <netinet/in.h> //sockaddress_in
 #include <vector>
 #include <unistd.h>
 #include <sstream>
-#include "Client.hpp"
-#include "Channel.hpp"
-
-#define PORT 4040
+#include "./replyCodes.hpp"
+#include "./Client.hpp"
+// #include "Channel.hpp"
+class Client;
+class Channel;
 
 class IrcServer {
     private:
-        int         servPort;
-        int         servSocket;
-        fd_set      masterfds;
-        std::string servPass;
-        std::string _servName;
-
-        std::map<int, Client *> clients;
-        std::map<std::string, Channel *> channels;
-
+        int         _port;
+        std::string _password;
+        int         _servSockfd;
+        size_t      _highestfd;
+        fd_set      _masterSet;
+        std::string _servname;
+        std::map<int, Client*> _clientsBySock;
+        std::map<std::string, Client *>  _clientsByNick;
+        // std::map<std::string, Channel*>  _allChannels;
     public:
-        IrcServer();
-        // IrcServer(int port, std::string passw);
+        IrcServer(int port, std::string passw);
 
         void setupServer(void);
         void startAccepting(void);
-        void handleDataReq(int clientSocket_);
-        void parseCommand(int clientSocket_);
 
-        ~IrcServer();
+        void newConnection();
+        void newMessage(int clientSock);
+        void disconnected(int clientSock);
+
+        void sendQueuedData(int clientSock);
+
+        Client *getClientByNick(const std::string &nick);
+        Client *getClientByfd(int clientSock);
+
+        void    parseMessage(Client *client);
+        void    handleNick(Client *client, std::vector<std::string> &allparams);
+        void    handleUser(Client *client, std::vector<std::string> &allparams);
+        void    privateMsg(Client *client, std::vector<std::string> &allparams);
+        
+
+        void numericReply(Client *client, int code, std::string params, std::string msj);
+        void sendWelcomeMsg(Client *client);
+        // fd_set fetchReadyClients();
+
+        //utils
+        bool validateAscii(std::string&input, std::string&cmd);
+        void displayAllInfo(Client *client);
+        // ~IrcServer();
 };
+
 
