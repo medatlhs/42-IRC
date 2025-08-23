@@ -24,7 +24,7 @@ class IrcServer {
         std::string _servname;
         std::map<int, Client*> _clientsBySock;
         std::map<std::string, Client *>  _clientsByNick;
-        // std::map<std::string, Channel*>  _allChannels;
+        std::map<std::string, Channel*>  _allChannels;
     public:
         IrcServer(int port, std::string passw);
 
@@ -37,8 +37,10 @@ class IrcServer {
 
         void sendQueuedData(int clientSock);
 
+        bool checkNickTaken(const std::string &nick);
         Client *getClientByNick(const std::string &nick);
         Client *getClientByfd(int clientSock);
+        Channel *getChannel(const std::string &channelname);
 
         void    parseMessage(Client *client);
         void    handleNick(Client *client, std::vector<std::string> &allparams);
@@ -52,7 +54,12 @@ class IrcServer {
 
         //utils
         bool validateAscii(std::string&input, std::string&cmd);
+        std::vector<std::string> seperator(std::string &str, char c);
         void displayAllInfo(Client *client);
+
+        void channelManager(Client *client, std::vector<std::string> &allparams);
+        bool channelExists(const std::string &channelname);
+        bool checkIfOnChannel(Client *client, const std::string &channelname);
         // ~IrcServer();
 };
 

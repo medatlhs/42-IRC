@@ -1,9 +1,49 @@
 #include "../Includes/replyCodes.hpp"
 #include "../Includes/IrcServer.hpp"
+#include "../Includes/Channel.hpp"
 #include "../Includes/Client.hpp"
 #include <sys/select.h> // fd_set
 
-IrcServer::IrcServer(int port, std::string passw) : _port(port), _password(passw), _servname("irc-server") { }
+IrcServer::IrcServer(int port, std::string passw) 
+    : _port(port), _password(passw), _servname("irc-server") { }
+
+Client *IrcServer::getClientByfd(int clientSock) {
+    try {
+        Client *client = _clientsBySock.at(clientSock);
+        return client;
+    } catch(const std::exception &e) {
+        return nullptr;
+    }
+}
+
+Client *IrcServer::getClientByNick(const std::string&nick) {
+    std::cout << "nick: [" << nick << "]" << std::endl;
+    try {
+        Client *client = _clientsByNick.at(nick);
+        return client;
+    } catch(const std::exception &e) {
+        std::cout << "clientbynick\n";
+        std::cerr << e.what() << std::endl;
+        return nullptr;
+    }
+}
+
+Channel *IrcServer::getChannel(const std::string &channelname) {
+    try {
+        Channel *channel = _allChannels.at(channelname);
+        return channel;
+    } catch(const std::exception& e) {
+        std::cerr << e.what() << '\n';
+        return nullptr;
+    }
+}
+
+bool IrcServer::checkNickTaken(const std::string &nick) {
+    std::map<std::string, Client *>::iterator it;
+    for (it = _clientsByNick.begin(); it != _clientsByNick.end(); it++)
+        if (!nick.compare(it->first)) return true ;
+    return false;
+}
 
 void IrcServer::setupServer() {
     _servSockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -52,6 +92,7 @@ void IrcServer::parseMessage(Client *client) {
     if (!messageCmd.compare("NICK")) this->handleNick(client, allparameters);
     else if (!messageCmd.compare("USER")) this->handleUser(client, allparameters);
     else if (!messageCmd.compare("PRIVMSG")) this->privateMsg(client, allparameters);
+    else if (!messageCmd.compare("JOIN")) this->channelManager(client, allparameters);
     else if (messageCmd == "INFO") this->displayAllInfo(client);
 }
 
@@ -78,7 +119,7 @@ void IrcServer::numericReply(Client *client, int code, std::string params, std::
     ss  << ":" << _servname << " " << numericCode << " " << client->getNickName();
     if (!params.empty()) ss << " ";
     ss << params << " :" << msj << "\n";
-    if (client->getQueueBuffer().empty()) client->setQueueBuffer(ss.str());
+    if (!client->_dataWaiting) client->setQueueBuffer(ss.str());
     else client->setQueueBuffer(client->getQueueBuffer().append(ss.str()));
     client->_dataWaiting = true;
 }
@@ -96,7 +137,9 @@ void IrcServer::handleNick(Client *client, std::vector<std::string> &allparams) 
     std::string cmd = "NICK";
     if (allparams.size() != 1)
         return numericReply(client, ERR_NEEDMOREPARAMS, cmd, msg_param);
-    if (std::isdigit(allparams[0][0]))
+    if (checkNickTaken(allparams[0])) {
+        return numericReply(client, ERR_ALREADYREGISTRED, cmd, msg_taken);
+    } else if (std::isdigit(allparams[0][0]))
         return numericReply(client, ERR_ERRONEUSNICKNAME, cmd, msg_digit_start);
     else if (!validateAscii(allparams[0], cmd))
         return numericReply(client, ERR_ERRONEUSNICKNAME, cmd, msg_inva_char);
@@ -126,7 +169,7 @@ void IrcServer::handleUser(Client *client, std::vector<std::string> &allparams) 
         }
     }
     if (!seenColon) return numericReply(client, ERR_NEEDMOREPARAMS, cmd, msg_param);
-    std::string fullname; // cursor here means the params are valid
+    std::string fullname; // params are valid
     for (size_t i = 3; i < allparams.size(); i++) {
         fullname.append(allparams[i]);
         if (i + 1 != allparams.size()) fullname.append(" ");
@@ -137,9 +180,69 @@ void IrcServer::handleUser(Client *client, std::vector<std::string> &allparams) 
         client->setState(REGISTERED);
         _clientsByNick.insert(std::make_pair(client->getNickName(), client));
         this->sendWelcomeMsg(client);
-    }   
-    else if (client->getStage() == NOTHING_SET) client->setStage(USER_SET);
+    } else if (client->getStage() == NOTHING_SET) 
+        client->setStage(USER_SET);
 }
+
+std::vector<std::string> IrcServer::seperator(std::string &str, char c) {
+    std::stringstream ss(str);
+    std::vector<std::string> container;
+    std::string element;
+    while (std::getline(ss, element, c))
+        container.push_back(element);
+    return container;
+}
+//channels 
+bool IrcServer::channelExists(const std::string &channelname) {
+    return _allChannels.find(channelname) != _allChannels.end();
+}
+
+//JOIN #chan1,#chan2,#chan3 ,,key3
+void IrcServer::channelManager(Client *client, std::vector<std::string> &allparams) {
+    std::string cmd = "JOIN", channelname;
+    if (allparams.size() > 2)
+        return numericReply(client, ERR_NEEDMOREPARAMS, cmd, msg_param);
+    std::vector<std::string> channels = this->seperator(allparams[0], ',');
+    std::vector<std::string> keys;
+    if (allparams.size() == 2)
+        keys = this->seperator(allparams[1], ',');
+    for (size_t i = 0; i < channels.size(); i++) {
+        if (channels[i][0] != '#' && channels[i][0] != '&') {
+            numericReply(client, ERR_NOSUCHCHANNEL, cmd, msg_no_such_channel); // can add name
+            continue ;
+        } else if (channelExists(channels[i]) == true) { // channel exists
+            Channel *channel = _allChannels[channels[i]];
+             if (channel->isUserInChannel(client)) {
+                numericReply(client, ERR_USERONCHANNEL, cmd, msg_useronchannel);
+                continue ;
+            } else if (channel->getLimit() > 0 && (channel->getMembersCount()+1) > channel->getLimit()) {
+                numericReply(client, ERR_CHANNELISFULL, cmd, msg_user_limit);
+                continue ;
+            } else if (channel->isUserBanned(client)) {
+                numericReply(client, ERR_BANNEDFROMCHAN, cmd, msg_banned);
+                continue ;
+            } else if (channel->isPrivateChannel()) {
+                if (channel->isUserInvited(client)) {
+                    channel->addRegularMember(client);
+                    std::string fullmessage = ":"+client->genHostMask()+" JOIN :"+channels[i]+"\r\n"; 
+                    channel->broadcast(client, fullmessage, true);
+                } else numericReply(client, ERR_INVITEONLYCHAN, cmd, msg_invite_only);
+                continue ;
+            }
+            channel->addRegularMember(client);
+            std::string fullmessage = ":"+client->genHostMask()+" JOIN :"+channels[i]+"\r\n"; 
+            channel->broadcast(client, fullmessage, true); // TO DO TOPIC replys
+        } else { // create a channel
+            Channel *newChannel = new Channel(channels[i]);
+            // client->makeUserOperator();
+            newChannel->addRegularMember(client);
+            _allChannels.insert(std::make_pair(channels[i], newChannel));
+            std::string fullmessage = ":"+client->genHostMask()+" JOIN :"+channels[i]+"\r\n"; 
+            newChannel->broadcast(client, fullmessage, true); // TO DO TOPIC replys
+        }
+    }
+}
+
 // PRIVMSG nick :hey there
 void IrcServer::privateMsg(Client *client, std::vector<std::string> &allparams) {
     std::string cmd = "PRIVMSG", target, fullMessage;
@@ -155,19 +258,29 @@ void IrcServer::privateMsg(Client *client, std::vector<std::string> &allparams) 
         fullMessage.append(allparams[i]);
         if (i+1!=allparams.size()) fullMessage.append(" ");
     }
-    fullMessage.append("\r\n");
+    fullMessage.append("\r\n"); //add in final destination
     Client *reciver;
     for (size_t i = 0; i < targets.size(); i++) {
-        if (targets[i].at(0) == '#')
-            std::cout << "channel\n";
-        else {
+        if (targets[i].empty()) {
+            numericReply(client, ERR_NORECIPIENT, cmd, msg_no_recipirnt);
+            continue;
+        } else if (targets[i].at(0) == '#' || targets[i].at(0) == '&') { // its a afucking channel
+            Channel *channel = getChannel(targets[i]);
+            if (!channel) {
+                std::string msg = msg_no_such_channel + std::string(" ") + targets[i]; 
+                numericReply(client, ERR_NOSUCHCHANNEL, cmd, msg); // can add name
+                continue ;
+            }
+            channel->broadcast(client, fullMessage, false);
+        } else {
             reciver = getClientByNick(targets[i]);
-            if (!reciver) // client not found
-                return numericReply(client, ERR_NOSUCHNICK, cmd, msg_invalid_nick);
+            if (!reciver) {
+                this->numericReply(client, ERR_NOSUCHNICK, cmd, msg_invalid_nick);
+                continue ;
+            } // client not found 
             reciver->setQueueBuffer(client->genHostMask() + " " + cmd + " " + targets[i] + " " + fullMessage);
-            reciver->_dataWaiting = true;
         }
-    }
+    } // RPL_AWAY
 }
 
 void IrcServer::sendQueuedData(int clientSock) {
@@ -185,8 +298,7 @@ void IrcServer::startAccepting() {
     fd_set writeReadySet;
     _highestfd = _servSockfd;
     FD_SET(_servSockfd, &_masterSet);
-    while (true)
-    {
+    while (true) {
         FD_ZERO(&readReadySet);
         FD_ZERO(&writeReadySet);
         readReadySet = _masterSet;
@@ -205,6 +317,7 @@ void IrcServer::startAccepting() {
             if (FD_ISSET(i, &writeReadySet)) {
                 if ((int)i != _servSockfd) {
                     Client *client = getClientByfd(i);
+                    if (!client) continue ;
                     if (client->_dataWaiting) this->sendQueuedData(i);
                 }
             }
@@ -225,28 +338,6 @@ void IrcServer::disconnected(int clientSock) {
     std::cout << "client disconnected!\n";
     FD_CLR(clientSock, &_masterSet);
     close(clientSock);
-}
-
-Client *IrcServer::getClientByfd(int clientSock) {
-    try {
-        Client *client = _clientsBySock.at(clientSock);
-        return client;
-    } catch(const std::exception &e) {
-        std::cerr << e.what() << std::endl;
-        return nullptr;
-    }
-}
-
-Client *IrcServer::getClientByNick(const std::string&nick) {
-    std::cout << "nick: [" << nick << "]" << std::endl;
-    try {
-        Client *client = _clientsByNick.at(nick);
-        return client;
-    } catch(const std::exception &e) {
-        std::cout << "clientbynick\n";
-        std::cerr << e.what() << std::endl;
-        return nullptr;
-    }
 }
 
 void IrcServer::displayAllInfo(Client *client) {

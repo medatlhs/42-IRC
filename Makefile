@@ -1,10 +1,12 @@
 
 SRC = main.cpp \
+		Source/Channel.cpp \
 		Source/Client.cpp \
 		Source/IrcServer.cpp
 
 INC = Includes/Client.hpp \
 		Includes/IrcServer.hpp \
+		Includes/Channel.hpp \
 		Includes/replyCodes.hpp
 
 OBJS = $(SRC:.cpp=.o)

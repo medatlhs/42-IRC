@@ -14,9 +14,10 @@ std::string &Client::getRecvBuffer(void) { return _recvBuffer; }
 std::string &Client::getQueueBuffer(void) { return _queueBuffer; }
 std::string Client::genHostMask() { return  _nickName + "!" + _userName + "@" + _host; }
 
-void Client::setQueueBuffer(const std::string newData) {  
-    _queueBuffer.clear(); 
-    _queueBuffer = newData; 
+void Client::setQueueBuffer(const std::string newData) {
+    if (!_dataWaiting) { _queueBuffer = newData; }
+    else _queueBuffer.append(newData); 
+    _dataWaiting = true;
 }
 void Client::setRecvBuffer(const std::string newData) {
     _queueBuffer.clear(); 
@@ -33,9 +34,4 @@ void Client::setHost(sockaddr_in clientAddr) {
     if (ip.empty())
         ip = "0.0.0.0"; // temp fix
     this->_host = ip;
-}
-
-void Client::sendPrivateMsg(std::string &message) {
-    setQueueBuffer(message);
-    this->_dataWaiting = true;
 }

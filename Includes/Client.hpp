@@ -17,6 +17,7 @@
 
 enum ClientState { ANNONYMOUS, REGISTERED, DISCONNECTED };
 enum LoginStage { NOTHING_SET, NICK_SET, USER_SET };
+
 class Client {
     private:
         int         _clientSocket;
@@ -36,7 +37,6 @@ class Client {
     public:
         bool        _dataWaiting;
         Client(int clientSocket, const std::string&servname);
-        //commands
         void setNickName(const std::string &nick);
         void setUserName(const std::string &user);
         void setFullName(const std::string &name);

@@ -9,8 +9,12 @@ enum ErrorCode {
         ERR_ERRONEUSNICKNAME = 432, 
         ERR_ALREADYREGISTRED = 433, 
         ERR_NEEDMOREPARAMS = 461,
+        ERR_USERONCHANNEL = 443,
         ERR_NORECIPIENT = 411,
         ERR_NOTEXTTOSEND = 412,
+        ERR_CHANNELISFULL = 471,
+        ERR_INVITEONLYCHAN = 473,
+        ERR_BANNEDFROMCHAN = 474
 };
 
 #define msg_param "Not enough parameters!"
@@ -27,11 +31,13 @@ enum ErrorCode {
 #define msg_no_recipirnt "No recipient given!"
 #define msg_notexttosend "No text to send!"
 
+
 #define msg_no_such_channel "No such channel exists!"
-#define msg_invite_only "Channel is invite-only!"
 #define msg_banned "You are banned from this channel!"
 #define msg_user_limit "Channel user limit reached!"
 #define msg_no_privileges "You do not have the necessary privileges!"
+#define msg_useronchannel "You are already on that channel!"
+#define msg_invite_only "Cannot join channel invite only!"
 
 #define msg_server_full "Server is full!"
 #define msg_ping_timeout "Ping timeout!"
