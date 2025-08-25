@@ -27,6 +27,10 @@ void Channel::addRegularMember(Client *client) {
     _membersCount++;
 }
 
+void Channel::removeRegularMember(Client *client) {
+
+}
+
 void Channel::broadcast(Client *sender, const std::string &message, bool newJoinFlag) {
     std::map<std::string, Client *>::iterator it = _members.begin();
     while (it != _members.end()) {

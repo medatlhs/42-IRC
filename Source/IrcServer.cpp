@@ -105,13 +105,15 @@ void IrcServer::clientDisconnected(int clientSock) {
     std::cout << "client disconnected!\n";
     Client *client = getClientByfd(clientSock);
 
-    if ((client->getClientState()==ANNONYMOUS && client->getLoginStage()==NICK_SET)
-        || client->getClientState() == REGISTERED) { //  nick set
+    _clientsBySock.erase(clientSock);
+    if (client->getNickName().empty())
         _clientsByNick.erase(client->getNickName());
+    
+    std::vector<Channel *> joinedChans = client->getJoinedChans();
+    for (size_t i = 0; i < joinedChans.size(); i++) {
+        joinedChns[i].
     }
 
-    
-    _clientsBySock.erase(clientSock);
     delete client;
     // chan->broadcast(":" + client->getNick() + " QUIT :Client disconnected\r\n",
     FD_CLR(clientSock, &_masterSet);

@@ -14,6 +14,7 @@
 #include <netinet/in.h> 
 #include <sstream>
 #include "./replyCodes.hpp"
+#include "./channel.hpp"
 
 enum ClientState { ANNONYMOUS, REGISTERED, DISCONNECTED };
 enum LoginStage { NOTHING_SET, NICK_SET, USER_SET };
@@ -34,7 +35,7 @@ class Client {
 
         std::string _recvBuffer;
         std::string _queueBuffer;
-        std::vector<std::string> _joinedChans;
+        std::vector<Channel *> _joinedChans;
     public:
         bool        _dataWaiting;
         Client(int clientSocket, const std::string&servname);
@@ -61,7 +62,9 @@ class Client {
         std::string &getRecvBuffer(void);
         std::string &getQueueBuffer(void);
 
-        void addtoJoindChannels(const std::string &channelname);
-        void remvfromJoindChannels(const std::string &channelname);
+        void addChannelMembership(Channel *channel);
+        void removeChannelMembership(Channel *channel);
+        bool isChannelMember(Channel *channel);
+        srd::vector<Channel *> &getJoindChans(void);
 };
 
