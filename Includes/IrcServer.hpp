@@ -31,22 +31,26 @@ class IrcServer {
         void setupServer(void);
         void startAccepting(void);
 
-        void newConnection();
-        void newMessage(int clientSock);
-        void disconnected(int clientSock);
+        void handleNewConnection();
+        void handleComingData(int clientSock);
+        void clientDisconnected(int clientSock);
 
         void sendQueuedData(int clientSock);
 
-        bool checkNickTaken(const std::string &nick);
-        Client *getClientByNick(const std::string &nick);
-        Client *getClientByfd(int clientSock);
+        bool    checkNickTaken(const std::string &nick);
+        Client  *getClientByNick(const std::string &nick);
+        Client  *getClientByfd(int clientSock);
         Channel *getChannel(const std::string &channelname);
 
         void    parseMessage(Client *client);
         void    handleNick(Client *client, std::vector<std::string> &allparams);
         void    handleUser(Client *client, std::vector<std::string> &allparams);
-        void    privateMsg(Client *client, std::vector<std::string> &allparams);
         
+        //privatemessage
+        void privateMsg(Client* client, std::vector<std::string>& allparams);
+        void sendPrivmsgToUser(Client* sender, const std::string& nick, const std::string& message);
+        void sendPrivmsgToChannel(Client* sender, const std::string& chanName, const std::string& message);
+        std::string buildPrivmsg(Client* sender, const std::string& target, const std::vector<std::string>& allparams);
 
         void numericReply(Client *client, int code, std::string params, std::string msj);
         void sendWelcomeMsg(Client *client);
@@ -57,9 +61,12 @@ class IrcServer {
         std::vector<std::string> seperator(std::string &str, char c);
         void displayAllInfo(Client *client);
 
-        void channelManager(Client *client, std::vector<std::string> &allparams);
+        bool isValidChannelName(const std::string& name);
         bool channelExists(const std::string &channelname);
-        bool checkIfOnChannel(Client *client, const std::string &channelname);
+        void handleJoinExisting(Channel* channel, Client* client, const std::string& channelName);
+        void broadcastJoin(Channel* channel, Client* client, const std::string& channelName);
+        void handleCreateChannel(Client* client, const std::string& channelName);
+        void channelManager(Client *client, std::vector<std::string> &allparams);
         // ~IrcServer();
 };
 

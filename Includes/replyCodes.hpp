@@ -14,7 +14,8 @@ enum ErrorCode {
         ERR_NOTEXTTOSEND = 412,
         ERR_CHANNELISFULL = 471,
         ERR_INVITEONLYCHAN = 473,
-        ERR_BANNEDFROMCHAN = 474
+        ERR_BANNEDFROMCHAN = 474,
+        ERR_UNKNOWNCOMMAND = 421
 };
 
 #define msg_param "Not enough parameters!"

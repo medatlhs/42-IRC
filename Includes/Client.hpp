@@ -34,14 +34,15 @@ class Client {
 
         std::string _recvBuffer;
         std::string _queueBuffer;
+        std::vector<std::string> _joinedChans;
     public:
         bool        _dataWaiting;
         Client(int clientSocket, const std::string&servname);
         void setNickName(const std::string &nick);
         void setUserName(const std::string &user);
         void setFullName(const std::string &name);
-        void setStage(LoginStage stage);
-        void setState(ClientState state);
+        void setLoginStage(LoginStage stage);
+        void setClientState(ClientState state);
         void setRecvBuffer(const std::string newData);
         void setQueueBuffer(const std::string newData);
         void setHost(sockaddr_in clientAddr);
@@ -55,9 +56,12 @@ class Client {
         std::string &getUserName(void);
         std::string &getRealName(void);
         std::string &getFullName(void);
-        LoginStage  &getStage(void);
-        ClientState &getState(void);
+        LoginStage  &getLoginStage(void);
+        ClientState &getClientState(void);
         std::string &getRecvBuffer(void);
         std::string &getQueueBuffer(void);
+
+        void addtoJoindChannels(const std::string &channelname);
+        void remvfromJoindChannels(const std::string &channelname);
 };
 
