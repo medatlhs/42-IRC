@@ -27,11 +27,12 @@ void Client::setClientState(ClientState state) {
 }
 
 void Client::setRecvBuffer(const std::string newData) {
-    _recvBuffer += newData;
+    _recvBuffer.append(newData);
 }
 
 void Client::setQueueBuffer(const std::string newData) {
-    _queueBuffer += newData;
+    _queueBuffer.append(newData);
+    _dataWaiting = true;
 }
 
 void Client::setHost(sockaddr_in clientAddr) {

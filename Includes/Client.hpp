@@ -1,24 +1,26 @@
 #pragma once
-#include <string>
-#include <vector>
-#include <iostream>
-#include <fcntl.h>
-#include <sys/time.h>
-#include <map>
-#include <sys/socket.h>
-#include <iostream>
-#include <netinet/in.h> // sockaddress_in
-#include <vector>
-#include <unistd.h>
-#include <arpa/inet.h> // for inet
-#include <netinet/in.h> 
-#include <sstream>
-#include "./replyCodes.hpp"
-#include "./Channel.hpp"
+
+# include <string>
+# include <vector>
+# include <iostream>
+# include <fcntl.h>
+# include <sys/time.h>
+# include <map>
+# include <sys/socket.h>
+# include <iostream>
+# include <netinet/in.h>
+# include <vector>
+# include <unistd.h>
+# include <arpa/inet.h>
+# include <netinet/in.h> 
+# include <sstream>
+# include "./replyCodes.hpp"
 
 enum ClientState { ANNONYMOUS, REGISTERED, DISCONNECTED };
 enum LoginStage { NOTHING_SET, NICK_SET, USER_SET };
+
 class Channel;
+
 class Client {
     private:
         int         _clientSocket;

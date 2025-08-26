@@ -85,23 +85,44 @@ void IrcServer::handleNewConnection() {
 }
 
 void IrcServer::parseMessage(Client *client) {
-    if (client->getRecvBuffer().empty())
-        return ;
-    std::stringstream ss(client->getRecvBuffer());
+    std::string recivedData = client->getRecvBuffer();
+    if (recivedData.empty()) return ;
+
+    size_t npos = recivedData.find('\n');
+    std::cout << "pos of \r\n: " << npos << std::endl;
+    std::string fullIrcCommand;
+    if ((npos) != std::string::npos) {
+        fullIrcCommand = recivedData.substr(0, npos);
+        std::cout << "fullirc command: [" << fullIrcCommand << "]\n";
+        std::cout << "{[" << recivedData.substr(npos + 1, recivedData.length()) << "]}\n\n";
+        client->getRecvBuffer().erase(0, npos + 1);
+    } 
+
+    std::stringstream ss(fullIrcCommand);
     std::string messageCmd, singleparam;
     std::vector<std::string> allparameters;
     ss >> messageCmd;
     while (ss >> singleparam)
         allparameters.push_back(singleparam);
-    if (!messageCmd.compare("NICK")) this->handleNick(client, allparameters);
-    else if (!messageCmd.compare("USER")) this->handleUser(client, allparameters);
-    else if (!messageCmd.compare("PRIVMSG")) this->privateMsg(client, allparameters);
-    else if (!messageCmd.compare("JOIN")) this->channelManager(client, allparameters);
-    else if (messageCmd == "INFO") this->displayAllInfo(client);
-    else numericReply(client, ERR_UNKNOWNCOMMAND, "", "Unknown command!");
+    
+    std::cout << "CMD: [" << messageCmd << "]\n";
+
+    for (size_t i = 0; i < allparameters.size(); i++)
+        std::cout << "Param[" << i << "]: [" << allparameters[i] << "]\n";
+    std::cout << "--------------------------------------\n";
+
+    if (!messageCmd.compare("NICK")) 
+        this->handleNick(client, allparameters);
+    else if (!messageCmd.compare("USER")) 
+        this->handleUser(client, allparameters);
+    else if (!messageCmd.compare("PRIVMSG")) 
+        this->privateMsg(client, allparameters);
+    else if (!messageCmd.compare("JOIN")) 
+        this->channelManager(client, allparameters);
+    else if (messageCmd == "INFO") 
+        this->displayAllInfo(client);
+    // else numericReply(client, ERR_UNKNOWNCOMMAND, "", "Unknown command!");
 }
-
-
 
 void IrcServer::clientDisconnected(int clientSock) {
     std::cout << "client disconnected!\n";
@@ -126,7 +147,8 @@ void IrcServer::clientDisconnected(int clientSock) {
             continue ;
         }
         //:john!johnuser@host.example.com QUIT :Client disconnected
-        std::string channelsAlert =  ":" + client->genHostMask() + " QUIT :Client disconnected";
+        std::string channelsAlert =  ":" + client->genHostMask() 
+            + " QUIT :Client disconnected" + "\r\n";
         joinedChans[i]->broadcast(client, channelsAlert, false);
     }
     FD_CLR(clientSock, &_masterSet);
@@ -154,14 +176,12 @@ void IrcServer::handleComingData(int clientSock) {
 void IrcServer::numericReply(Client *client, int code, std::string params, std::string msj) {
     std::stringstream ss;
     std::string numericCode = std::to_string(code);
-    if (code < 10) 
-        numericCode = "00" + std::to_string(code);
+    if (code < 10) numericCode = "00" + std::to_string(code);
+    else if (code < 100) numericCode = "0" + std::to_string(code);
     ss  << ":" << _servname << " " << numericCode << " " << client->getNickName();
     if (!params.empty()) ss << " ";
-    ss << params << " :" << msj << "\n";
-    if (!client->_dataWaiting) client->setQueueBuffer(ss.str());
-    else client->setQueueBuffer(client->getQueueBuffer().append(ss.str()));
-    client->_dataWaiting = true;
+    ss << params << " :" << msj << "\r\n";
+    client->setQueueBuffer(ss.str());
 }
 
 bool IrcServer::validateAscii(std::string &input, std::string &cmd) {
@@ -170,21 +190,18 @@ bool IrcServer::validateAscii(std::string &input, std::string &cmd) {
     for (size_t i = 0; i < input.length(); i++)
         if (notAllowed.find(input[i]) != std::string::npos)
             return false ;
-    return true;
+    return true ;
 }
 
 void IrcServer::handleNick(Client *client, std::vector<std::string> &allparams) {
+
     std::string cmd = "NICK";
-
-    if (allparams.size() != 1)
+    if (allparams.size() < 1)
         return numericReply(client, ERR_NEEDMOREPARAMS, cmd, msg_param);
-
     if (checkNickTaken(allparams[0]))
         return numericReply(client, ERR_ALREADYREGISTRED, cmd, msg_taken);
-
     if (std::isdigit(allparams[0][0]))
         return numericReply(client, ERR_ERRONEUSNICKNAME, cmd, msg_digit_start);
-
     if (!validateAscii(allparams[0], cmd))
         return numericReply(client, ERR_ERRONEUSNICKNAME, cmd, msg_inva_char);
 
@@ -192,7 +209,7 @@ void IrcServer::handleNick(Client *client, std::vector<std::string> &allparams) 
     if (client->getLoginStage() == USER_SET) {
         client->setClientState(REGISTERED);
         _clientsByNick[allparams[0]] = client;
-        this->sendWelcomeMsg(client);
+        sendWelcomeMsg(client);
     } else if (client->getLoginStage() == NOTHING_SET)
         client->setLoginStage(NICK_SET);
 }
@@ -216,18 +233,21 @@ void IrcServer::handleUser(Client *client, std::vector<std::string> &allparams) 
             seenColon = true;
         }
     }
-    if (!seenColon) return numericReply(client, ERR_NEEDMOREPARAMS, cmd, msg_param);
+
+    if (!seenColon) 
+        return numericReply(client, ERR_NEEDMOREPARAMS, cmd, msg_param);
     std::string fullname; // params are valid
     for (size_t i = 3; i < allparams.size(); i++) {
         fullname.append(allparams[i]);
         if (i + 1 != allparams.size()) fullname.append(" ");
     }
+
     client->setUserName(allparams[0]);
     client->setFullName(fullname.erase(0, 1));
     if (client->getLoginStage() == NICK_SET) {
         client->setClientState(REGISTERED);
         _clientsByNick[client->getNickName()] = client;
-        this->sendWelcomeMsg(client);
+        sendWelcomeMsg(client);
     } else if (client->getLoginStage() == NOTHING_SET) 
         client->setLoginStage(USER_SET);
 }
@@ -308,6 +328,7 @@ std::string IrcServer::buildPrivmsg(Client* sender, const std::string& target, c
         ss << allparams[i];
         if (i + 1 != allparams.size()) ss << " ";
     }
+    ss << "\r\n";
     return ss.str();
 }
 
@@ -353,16 +374,30 @@ void IrcServer::privateMsg(Client* client, std::vector<std::string>& allparams) 
         }
     }
 }
-
+// sendPendingData
 void IrcServer::sendQueuedData(int clientSock) {
     Client *client = this->getClientByfd(clientSock);
-    if (!getClientByfd(clientSock) || !client->_dataWaiting)
-        return ;
-    const char *data = client->getQueueBuffer().c_str();
-    int bytesSent = send(clientSock, data, client->getQueueBuffer().length(), 0);
-    if (bytesSent <= 0) 
-        std::cerr << std::strerror(errno) << std::endl;
-    else
+    if (!client || !client->_dataWaiting)
+        return;
+    
+    while (true) // iterating though all full replys defined by \r\n
+    {
+        size_t pos = client->getQueueBuffer().find("\r\n");
+        if (pos == std::string::npos) // full reply not complicated
+            break ;
+        std::string completeReply = client->getQueueBuffer().substr(0, pos); // +1 for \n
+        completeReply.append("\r\n");
+        const char *data = completeReply.c_str();
+        size_t totalSent = 0;
+        while (totalSent < completeReply.size()) {
+            int bytesSent = send(clientSock, data + totalSent, completeReply.size() - totalSent, 0);
+            if (bytesSent <= 0)
+                return std::cerr << std::strerror(errno) << std::endl, void();
+            totalSent += bytesSent;
+        }
+        client->getQueueBuffer().erase(0, pos + 2);
+    }
+    if (client->getQueueBuffer().empty())
         client->_dataWaiting = false;
 }
 

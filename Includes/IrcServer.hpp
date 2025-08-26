@@ -1,16 +1,16 @@
 #pragma once
-#include <fcntl.h>
-#include <sys/time.h>
-#include <map>
-#include <sys/socket.h>
-#include <iostream>
-#include <netinet/in.h> //sockaddress_in
-#include <vector>
-#include <unistd.h>
-#include <sstream>
-#include "./replyCodes.hpp"
-#include "./Client.hpp"
-// #include "Channel.hpp"
+
+# include <fcntl.h>
+# include <sys/time.h>
+# include <map>
+# include <sys/socket.h>
+# include <iostream>
+# include <netinet/in.h>
+# include <vector>
+# include <unistd.h>
+# include <sstream>
+# include "./replyCodes.hpp"
+
 class Client;
 class Channel;
 
@@ -54,7 +54,6 @@ class IrcServer {
 
         void numericReply(Client *client, int code, std::string params, std::string msj);
         void sendWelcomeMsg(Client *client);
-        // fd_set fetchReadyClients();
 
         //utils
         bool validateAscii(std::string&input, std::string&cmd);
