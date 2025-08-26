@@ -64,7 +64,6 @@ class IrcServer {
         bool isValidChannelName(const std::string& name);
         bool channelExists(const std::string &channelname);
         void handleJoinExisting(Channel* channel, Client* client, const std::string& channelName);
-        void broadcastJoin(Channel* channel, Client* client, const std::string& channelName);
         void handleCreateChannel(Client* client, const std::string& channelName);
         void channelManager(Client *client, std::vector<std::string> &allparams);
         // ~IrcServer();

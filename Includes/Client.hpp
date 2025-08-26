@@ -14,11 +14,11 @@
 #include <netinet/in.h> 
 #include <sstream>
 #include "./replyCodes.hpp"
-#include "./channel.hpp"
+#include "./Channel.hpp"
 
 enum ClientState { ANNONYMOUS, REGISTERED, DISCONNECTED };
 enum LoginStage { NOTHING_SET, NICK_SET, USER_SET };
-
+class Channel;
 class Client {
     private:
         int         _clientSocket;
@@ -48,7 +48,6 @@ class Client {
         void setQueueBuffer(const std::string newData);
         void setHost(sockaddr_in clientAddr);
 
-        void sendPrivateMsg(std::string &message);
         //utils
         std::string genHostMask(void);
 
@@ -65,6 +64,6 @@ class Client {
         void addChannelMembership(Channel *channel);
         void removeChannelMembership(Channel *channel);
         bool isChannelMember(Channel *channel);
-        srd::vector<Channel *> &getJoindChans(void);
+        std::vector<Channel *> &getJoindChans(void);
 };
 

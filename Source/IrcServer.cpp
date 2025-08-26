@@ -101,23 +101,37 @@ void IrcServer::parseMessage(Client *client) {
     else numericReply(client, ERR_UNKNOWNCOMMAND, "", "Unknown command!");
 }
 
+
+
 void IrcServer::clientDisconnected(int clientSock) {
     std::cout << "client disconnected!\n";
     Client *client = getClientByfd(clientSock);
-
+    if (!client)
+        return ;
     _clientsBySock.erase(clientSock);
-    if (client->getNickName().empty())
+    if (!client->getNickName().empty())
         _clientsByNick.erase(client->getNickName());
-    
-    std::vector<Channel *> joinedChans = client->getJoinedChans();
+    // remove from channels
+    std::vector<Channel *> &joinedChans = client->getJoindChans();
     for (size_t i = 0; i < joinedChans.size(); i++) {
-        joinedChns[i].
+        if (joinedChans[i]->isUserInChannel(client))
+            joinedChans[i]->removeMember(client);
+        if (joinedChans[i]->isUserInvited(client))
+            joinedChans[i]->removeInvitation(client);
+        if (joinedChans[i]->isUserBanned(client))
+            joinedChans[i]->unbanUser(client);
+        if (joinedChans[i]->getMembersCount() == 0) {
+            _allChannels.erase(joinedChans[i]->getChannelName());
+            delete joinedChans[i];
+            continue ;
+        }
+        //:john!johnuser@host.example.com QUIT :Client disconnected
+        std::string channelsAlert =  ":" + client->genHostMask() + " QUIT :Client disconnected";
+        joinedChans[i]->broadcast(client, channelsAlert, false);
     }
-
-    delete client;
-    // chan->broadcast(":" + client->getNick() + " QUIT :Client disconnected\r\n",
     FD_CLR(clientSock, &_masterSet);
     close(clientSock);
+    delete client;
 }
 
 void IrcServer::handleComingData(int clientSock) {
@@ -130,7 +144,8 @@ void IrcServer::handleComingData(int clientSock) {
         return std::cerr << "recv failed! Errno: " << std::strerror(errno), void();
     else {
         Client *client = this->getClientByfd(clientSock);
-        if (!client) return ;
+        if (!client) 
+            return ;
         client->setRecvBuffer(buffer);
         parseMessage(client);
     }
@@ -225,6 +240,7 @@ std::vector<std::string> IrcServer::seperator(std::string &str, char c) {
         container.push_back(element);
     return container;
 }
+
 //channels
 bool IrcServer::channelExists(const std::string &channelname) {
     return _allChannels.find(channelname) != _allChannels.end();
@@ -235,29 +251,27 @@ bool IrcServer::isValidChannelName(const std::string& name) {
 }
 
 void IrcServer::handleJoinExisting(Channel* channel, Client* client, const std::string& channelName) {
+    std::string cmd = "JOIN";
     if (channel->isUserInChannel(client))
-        return numericReply(client, ERR_USERONCHANNEL, "JOIN", msg_useronchannel);
+        return numericReply(client, ERR_USERONCHANNEL, cmd, msg_useronchannel);
     if (channel->getLimit() > 0 && (channel->getMembersCount() + 1) > channel->getLimit())
-        return numericReply(client, ERR_CHANNELISFULL, "JOIN", msg_user_limit);
+        return numericReply(client, ERR_CHANNELISFULL, cmd, msg_user_limit);
     if (channel->isUserBanned(client))
-        return numericReply(client, ERR_BANNEDFROMCHAN, "JOIN", msg_banned);
+        return numericReply(client, ERR_BANNEDFROMCHAN, cmd, msg_banned);
     if (channel->isPrivateChannel() && !channel->isUserInvited(client))
-        return numericReply(client, ERR_INVITEONLYCHAN, "JOIN", msg_invite_only);
-    channel->addRegularMember(client);
-    broadcastJoin(channel, client, channelName);
-}
-
-void IrcServer::broadcastJoin(Channel* channel, Client* client, const std::string& channelName) {
+        return numericReply(client, ERR_INVITEONLYCHAN, cmd, msg_invite_only);
+    channel->addMember(client);
     std::string fullMessage = ":" + client->genHostMask() + " JOIN :" + channelName + "\r\n";
     channel->broadcast(client, fullMessage, true); // TODO RPL_TOPIC RPL_NAMREPLY
 }
 
 void IrcServer::handleCreateChannel(Client* client, const std::string& channelName) {
     Channel* newChannel = new Channel(channelName);
-    newChannel->addRegularMember(client);
-    client->addtoJoindChannels(channelName);
+    newChannel->addMember(client);
+    client->addChannelMembership(newChannel);
     _allChannels[channelName] = newChannel;
-    broadcastJoin(newChannel, client, channelName);
+    std::string fullMessage = ":" + client->genHostMask() + " JOIN :" + channelName + "\r\n";
+    newChannel->broadcast(client, fullMessage, true); // TODO RPL_TOPIC RPL_NAMREPLY
 }
 
 void IrcServer::channelManager(Client *client, std::vector<std::string> &allparams) {
@@ -342,10 +356,12 @@ void IrcServer::privateMsg(Client* client, std::vector<std::string>& allparams) 
 
 void IrcServer::sendQueuedData(int clientSock) {
     Client *client = this->getClientByfd(clientSock);
+    if (!getClientByfd(clientSock) || !client->_dataWaiting)
+        return ;
     const char *data = client->getQueueBuffer().c_str();
     int bytesSent = send(clientSock, data, client->getQueueBuffer().length(), 0);
     if (bytesSent <= 0) 
-        std::cout << "Error: transmitting data\n";
+        std::cerr << std::strerror(errno) << std::endl;
     else
         client->_dataWaiting = false;
 }
@@ -357,10 +373,10 @@ void IrcServer::startAccepting() {
         fd_set  readReady = _masterSet;
         fd_set  writeReady = _masterSet;
         int     nreadyfds = select(_highestfd + 1, &readReady, &writeReady, nullptr, 0);
-         if (nreadyfds == -1) {
+        if (nreadyfds == -1) {
             std::cerr << "select failed! Errno: " << std::strerror(errno);
             continue ;
-         }
+        }
 
         for (size_t fd = 0; fd <= _highestfd; ++fd) {
             if (FD_ISSET(fd, &readReady)) {
