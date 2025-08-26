@@ -4,7 +4,7 @@
 
 Client::Client(int clientSocket, const std::string& servname)
     : _clientSocket(clientSocket), _servname(servname),
-      _state(ANNONYMOUS), _stage(NOTHING_SET), _dataWaiting(false) { }
+      _state(ANNONYMOUS), _stage(NOTHING_SET), _isOperator(false),_dataWaiting(false) { }
 
 void Client::setNickName(const std::string &nick) {
     _nickName = nick;
@@ -40,6 +40,11 @@ void Client::setHost(sockaddr_in clientAddr) {
     inet_ntop(AF_INET, &(clientAddr.sin_addr), ip, INET_ADDRSTRLEN);
     _host = std::string(ip);
 }
+
+void Client::setAsOperator() {
+    _isOperator = true;
+}
+
 // Fucking Getters 
 std::string Client::genHostMask() {
     return _nickName + "!" + _userName + "@" + _host;

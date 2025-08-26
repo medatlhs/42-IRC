@@ -1,7 +1,7 @@
-# include "../Includes/replyCodes.hpp"
-# include "../Includes/IrcServer.hpp"
-# include "../Includes/Channel.hpp"
-# include "../Includes/Client.hpp"
+# include "../../Includes/replyCodes.hpp"
+# include "../../Includes/IrcServer.hpp"
+# include "../../Includes/Channel.hpp"
+# include "../../Includes/Client.hpp"
 
 std::vector<std::string> IrcServer::seperator(std::string &str, char c) {
     std::stringstream ss(str);

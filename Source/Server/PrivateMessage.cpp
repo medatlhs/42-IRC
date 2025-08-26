@@ -3,6 +3,26 @@
 # include "../../Includes/Channel.hpp"
 # include "../../Includes/Client.hpp"
 
+void IrcServer::sendPrivmsgToChannel(Client* sender, const std::string& chanName
+    , const std::string& message) {
+    Channel* channel = getChannel(chanName);
+    if (!channel) {
+        std::string message = msg_no_such_channel + std::string(" ") + chanName;
+        numericReply(sender, ERR_NOSUCHCHANNEL, "PRIVMSG", message);
+        return;
+    }
+    channel->broadcast(sender, message, false);
+}
+
+void IrcServer::sendPrivmsgToUser(Client* sender, const std::string& nick
+    , const std::string& message) {
+    Client* receiver = getClientByNick(nick);
+    if (!receiver) {
+        numericReply(sender, ERR_NOSUCHNICK, "PRIVMSG", msg_invalid_nick);
+        return;
+    }
+    receiver->setQueueBuffer(message); // TO DO If user is away and also send RPL_AWAY
+}
 
 void IrcServer::privateMsg(Client* client, std::vector<std::string>& allparams) {
     std::string cmd = "PRIVMSG";
@@ -39,25 +59,4 @@ std::string IrcServer::buildPrivmsg(Client* sender, const std::string& target
     }
     ss << "\r\n";
     return ss.str();
-}
-
-void IrcServer::sendPrivmsgToChannel(Client* sender, const std::string& chanName
-    , const std::string& message) {
-    Channel* channel = getChannel(chanName);
-    if (!channel) {
-        std::string message = msg_no_such_channel + std::string(" ") + chanName;
-        numericReply(sender, ERR_NOSUCHCHANNEL, "PRIVMSG", message);
-        return;
-    }
-    channel->broadcast(sender, message, false);
-}
-
-void IrcServer::sendPrivmsgToUser(Client* sender, const std::string& nick
-    , const std::string& message) {
-    Client* receiver = getClientByNick(nick);
-    if (!receiver) {
-        numericReply(sender, ERR_NOSUCHNICK, "PRIVMSG", msg_invalid_nick);
-        return;
-    }
-    receiver->setQueueBuffer(message); // TO DO If user is away and also send RPL_AWAY
 }

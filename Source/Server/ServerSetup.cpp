@@ -1,7 +1,7 @@
-# include "../Includes/replyCodes.hpp"
-# include "../Includes/IrcServer.hpp"
-# include "../Includes/Channel.hpp"
-# include "../Includes/Client.hpp"
+# include "../../Includes/replyCodes.hpp"
+# include "../../Includes/IrcServer.hpp"
+# include "../../Includes/Channel.hpp"
+# include "../../Includes/Client.hpp"
 
 IrcServer::IrcServer(int port, std::string passw) 
     : _port(port), _password(passw), _servname("irc-server") { }

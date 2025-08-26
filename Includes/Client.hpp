@@ -35,6 +35,7 @@ class Client {
         ClientState _state;
         LoginStage  _stage;
 
+        bool        _isOperator;
         std::string _recvBuffer;
         std::string _queueBuffer;
         std::vector<Channel *> _joinedChans;
@@ -49,6 +50,7 @@ class Client {
         void setRecvBuffer(const std::string newData);
         void setQueueBuffer(const std::string newData);
         void setHost(sockaddr_in clientAddr);
+        void setAsOperator(void);
 
         //utils
         std::string genHostMask(void);

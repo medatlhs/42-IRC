@@ -1,7 +1,7 @@
-# include "../Includes/replyCodes.hpp"
-# include "../Includes/IrcServer.hpp"
-# include "../Includes/Channel.hpp"
-# include "../Includes/Client.hpp"
+# include "../../Includes/replyCodes.hpp"
+# include "../../Includes/IrcServer.hpp"
+# include "../../Includes/Channel.hpp"
+# include "../../Includes/Client.hpp"
 
 void IrcServer::parseMessage(Client *client) {
     std::string recivedData = client->getRecvBuffer();

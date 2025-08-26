@@ -31,6 +31,8 @@ class IrcServer {
         void setupServer(void);
         void startAccepting(void);
 
+        void handleKick(Client *client, std::vector<std::string> &allparams);
+
         void handleNewConnection();
         void handleComingData(int clientSock);
         void clientDisconnected(int clientSock);

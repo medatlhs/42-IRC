@@ -6,33 +6,11 @@
 void IrcServer::handleCreateChannel(Client* client, const std::string& channelName) {
     Channel* newChannel = new Channel(channelName);
     newChannel->addMember(client);
+    client->setAsOperator();
     client->addChannelMembership(newChannel);
     _allChannels[channelName] = newChannel;
     std::string fullMessage = ":" + client->genHostMask() + " JOIN :" + channelName + "\r\n";
     newChannel->broadcast(client, fullMessage, true); // TODO RPL_TOPIC RPL_NAMREPLY
-}
-
-void IrcServer::channelManager(Client *client, std::vector<std::string> &allparams) {
-    std::string cmd = "JOIN";
-    if (allparams.size() > 2)
-        return numericReply(client, ERR_NEEDMOREPARAMS, cmd, msg_param);
-    std::vector<std::string> channels = seperator(allparams[0], ',');
-    std::vector<std::string> keys;
-    if (allparams.size() == 2)
-        keys = seperator(allparams[1], ',');
-    for (size_t i = 0; i < channels.size(); i++) {
-        std::string chanName = channels[i];
-        if (!isValidChannelName(chanName)) {
-            std::string msg = msg_no_such_channel + std::string(" ") + chanName;
-            numericReply(client, ERR_NOSUCHCHANNEL, cmd, msg_no_such_channel);
-            continue;
-        }
-        if (channelExists(chanName)) {
-            handleJoinExisting(_allChannels[chanName], client, chanName);
-        } else {
-            handleCreateChannel(client, chanName);
-        }
-    }
 }
 
 void IrcServer::handleJoinExisting(Channel* channel, Client* client, const std::string& channelName) {
@@ -56,5 +34,28 @@ bool IrcServer::channelExists(const std::string &channelname) {
 
 bool IrcServer::isValidChannelName(const std::string& name) {
     return !name.empty() && (name[0] == '#' || name[0] == '&');
+}
+
+void IrcServer::channelManager(Client *client, std::vector<std::string> &allparams) {
+    std::string cmd = "JOIN";
+    if (allparams.size() > 2)
+        return numericReply(client, ERR_NEEDMOREPARAMS, cmd, msg_param);
+    std::vector<std::string> channels = seperator(allparams[0], ',');
+    std::vector<std::string> keys;
+    if (allparams.size() == 2)
+        keys = seperator(allparams[1], ',');
+    for (size_t i = 0; i < channels.size(); i++) {
+        std::string chanName = channels[i];
+        if (!isValidChannelName(chanName)) {
+            std::string msg = msg_no_such_channel + std::string(" ") + chanName;
+            numericReply(client, ERR_NOSUCHCHANNEL, cmd, msg_no_such_channel);
+            continue;
+        }
+        if (channelExists(chanName)) {
+            handleJoinExisting(_allChannels[chanName], client, chanName);
+        } else {
+            handleCreateChannel(client, chanName);
+        }
+    }
 }
 

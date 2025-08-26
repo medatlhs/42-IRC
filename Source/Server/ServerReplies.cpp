@@ -1,7 +1,7 @@
-# include "../Includes/replyCodes.hpp"
-# include "../Includes/IrcServer.hpp"
-# include "../Includes/Channel.hpp"
-# include "../Includes/Client.hpp"
+# include "../../Includes/replyCodes.hpp"
+# include "../../Includes/IrcServer.hpp"
+# include "../../Includes/Channel.hpp"
+# include "../../Includes/Client.hpp"
 
 void IrcServer::numericReply(Client *client, int code, std::string params, std::string msj) {
     std::stringstream ss;
