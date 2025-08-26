@@ -1,8 +1,16 @@
 
 SRC = main.cpp \
-		Source/Channel.cpp \
-		Source/Client.cpp \
-		Source/IrcServer.cpp
+		Channel/Channel.cpp \
+		Client/Client.cpp \
+		ServerCore/ClientLogic.cpp \
+		ServerCore/MessageParser.cpp \
+		ServerCore/ServerReplies.cpp \
+		ServerCore/ServerSetup.cpp \
+		ServerCore/ServerUtils.cpp \
+		ServerCore/Commands/JoinCommand.cpp \
+		ServerCore/Commands/NickCommand.cpp \
+		ServerCore/Commands/PrivateMessage.cpp \
+		ServerCore/Commands/UserCommand.cpp
 
 INC = Includes/Client.hpp \
 		Includes/IrcServer.hpp \
