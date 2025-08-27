@@ -3,8 +3,9 @@
 # include "../../Includes/Channel.hpp"
 # include "../../Includes/Client.hpp"
 
-void IrcServer::handleCreateChannel(Client* client, const std::string& channelName) {
+void IrcServer::handleCreateChannel(Client* client, const std::string& channelName, std::string &key) {
     Channel* newChannel = new Channel(channelName);
+    newChannel->setKey(key);
     newChannel->addMember(client);
     client->setAsOperator();
     client->addChannelMembership(newChannel);
@@ -13,8 +14,10 @@ void IrcServer::handleCreateChannel(Client* client, const std::string& channelNa
     newChannel->broadcast(client, fullMessage, true); // TODO RPL_TOPIC RPL_NAMREPLY
 }
 
-void IrcServer::handleJoinExisting(Channel* channel, Client* client, const std::string& channelName) {
+void IrcServer::handleJoinExisting(Channel* channel, Client* client, const std::string& channelName, std::string &key) {
     std::string cmd = "JOIN";
+    if (key != channel->getKey())
+        return numericReply(client, ERR_BADCHANNELKEY, cmd, msg_wrong_key);
     if (channel->isUserInChannel(client))
         return numericReply(client, ERR_USERONCHANNEL, cmd, msg_useronchannel);
     if (channel->getLimit() > 0 && (channel->getMembersCount() + 1) > channel->getLimit())
@@ -33,7 +36,7 @@ bool IrcServer::channelExists(const std::string &channelname) {
 }
 
 bool IrcServer::isValidChannelName(const std::string& name) {
-    return !name.empty() && (name[0] == '#' || name[0] == '&');
+    return (name[0] == '#' || name[0] == '&');
 }
 
 void IrcServer::channelManager(Client *client, std::vector<std::string> &allparams) {
@@ -44,18 +47,24 @@ void IrcServer::channelManager(Client *client, std::vector<std::string> &allpara
     std::vector<std::string> keys;
     if (allparams.size() == 2)
         keys = seperator(allparams[1], ',');
-    for (size_t i = 0; i < channels.size(); i++) {
-        std::string chanName = channels[i];
+    size_t i = -1;
+    while (++i < channels.size()) {
+        std::string &chanName = channels[i];
+        if (chanName.empty()) continue;
+
         if (!isValidChannelName(chanName)) {
-            std::string msg = msg_no_such_channel + std::string(" ") + chanName;
-            numericReply(client, ERR_NOSUCHCHANNEL, cmd, msg_no_such_channel);
+            numericReply(client, ERR_NOSUCHCHANNEL, chanName, msg_no_such_channel);
             continue;
         }
-        if (channelExists(chanName)) {
-            handleJoinExisting(_allChannels[chanName], client, chanName);
-        } else {
-            handleCreateChannel(client, chanName);
-        }
+
+        std::string cleanChanName = chanName.substr(1);
+        std::string key = "";
+        if (i < keys.size()) key = keys[i];
+
+        if (channelExists(cleanChanName))
+            handleJoinExisting(_allChannels[cleanChanName], client, cleanChanName, key);
+        else
+            handleCreateChannel(client, cleanChanName, key);
     }
 }
 

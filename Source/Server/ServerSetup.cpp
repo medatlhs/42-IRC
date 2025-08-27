@@ -25,7 +25,13 @@ void IrcServer::setupServer() {
         throw std::runtime_error("listen failed!");
     std::cout << "Irc Server lsitening on port [" << this->_port << "] ..." << std::endl;
 }
+/*
+JOIN # 
+:medox!med@127.0.0.1 JOIN :#
 
+:medox!med@127.0.0.1 PRIVMSG #med ::hey man
+
+*/
 void IrcServer::handleNewConnection() {
     sockaddr_in clientAddress;
     socklen_t   addressLength = sizeof(clientAddress);
@@ -55,7 +61,6 @@ void IrcServer::startAccepting() {
         fd_set readReady = _masterSet;
         fd_set writeReady = _masterSet;
         int nreadyfds = select(_highestfd + 1, &readReady, &writeReady, nullptr, 0);
-
         if (nreadyfds == -1) {
             std::cerr << "select failed! Errno: " << std::strerror(errno);
             continue ;

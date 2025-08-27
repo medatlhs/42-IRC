@@ -3,14 +3,15 @@ SRC = main.cpp \
 		Source/Channel.cpp \
 		Source/Client.cpp \
 		Source/Server/ClientLogic.cpp \
-		Source/Server/MessageParser.cpp \
+		Source/Server/message_parser.cpp \
 		Source/Server/ServerReplies.cpp \
 		Source/Server/ServerSetup.cpp \
 		Source/Server/ServerUtils.cpp \
-		Source/Server/JoinCommand.cpp \
-		Source/Server/NickCommand.cpp \
-		Source/Server/PrivateMessage.cpp \
-		Source/Server/UserCommand.cpp
+		Source/Server/Join.cpp \
+		Source/Server/Nick.cpp \
+		Source/Server/Privmsj.cpp \
+		Source/Server/User.cpp \
+		Source/Server/Part.cpp
 
 INC = Includes/Client.hpp \
 		Includes/IrcServer.hpp \
@@ -19,9 +20,9 @@ INC = Includes/Client.hpp \
 
 OBJS = $(SRC:.cpp=.o)
 CXX = c++
-CXXFLAGS = -Wall -Wextra -Werror -fsanitize=address -g -std=c++98
+CXXFLAGS = -Wall -Wextra -Werror -std=c++98
 NAME = ircserv
-
+# -fsanitize=address -g 
 all: $(NAME)
 %.o: %.cpp $(INC)
 	$(CXX) $(CXXFLAGS) -c $< -o $@

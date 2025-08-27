@@ -47,6 +47,7 @@ class IrcServer {
         void    parseMessage(Client *client);
         void    handleNick(Client *client, std::vector<std::string> &allparams);
         void    handleUser(Client *client, std::vector<std::string> &allparams);
+        void    handlePart(Client *client, std::vector<std::string> &allparams);
         
         //privatemessage
         void privateMsg(Client* client, std::vector<std::string>& allparams);
@@ -64,8 +65,8 @@ class IrcServer {
 
         bool isValidChannelName(const std::string& name);
         bool channelExists(const std::string &channelname);
-        void handleJoinExisting(Channel* channel, Client* client, const std::string& channelName);
-        void handleCreateChannel(Client* client, const std::string& channelName);
+        void handleJoinExisting(Channel* channel, Client* client, const std::string& channelName, std::string &key);
+        void handleCreateChannel(Client* client, const std::string& channelName, std::string &key);
         void channelManager(Client *client, std::vector<std::string> &allparams);
         // ~IrcServer();
 };

@@ -29,6 +29,8 @@ void IrcServer::parseMessage(Client *client) {
         this->privateMsg(client, allparameters);
     else if (!messageCmd.compare("JOIN")) 
         this->channelManager(client, allparameters);
+    else if (messageCmd == "PART")
+        this->handlePart(client, allparameters);
     else if (messageCmd == "INFO") 
         this->displayAllInfo(client);
     // else numericReply(client, ERR_UNKNOWNCOMMAND, "", "Unknown command!");

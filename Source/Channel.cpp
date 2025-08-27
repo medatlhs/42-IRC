@@ -8,6 +8,14 @@ bool Channel::isPrivateChannel() {
     return _inviteOnly;
 }
 
+std::string& Channel::getKey() {
+    return _key;
+}
+
+void Channel::setKey(const std::string &key) {
+    _key = key;
+}
+
 int Channel::getLimit() {
     return _membersLimit;
 }
@@ -19,6 +27,7 @@ int Channel::getMembersCount() {
 std::string& Channel::getChannelName() {
     return _name;
 }
+
 
 // Membership Checks
 bool Channel::isUserInChannel(Client *client) {

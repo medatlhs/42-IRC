@@ -7,7 +7,7 @@ void IrcServer::sendPrivmsgToChannel(Client* sender, const std::string& chanName
     , const std::string& message) {
     Channel* channel = getChannel(chanName);
     if (!channel) {
-        std::string message = msg_no_such_channel + std::string(" ") + chanName;
+        std::string message = msg_no_such_channel + std::string(" #") + chanName;
         numericReply(sender, ERR_NOSUCHCHANNEL, "PRIVMSG", message);
         return;
     }
@@ -42,7 +42,7 @@ void IrcServer::privateMsg(Client* client, std::vector<std::string>& allparams) 
     for (size_t i = 0; i < targets.size(); ++i) { //building the going message 
         std::string message = buildPrivmsg(client, targets[i], allparams);
         if (targets[i][0] == '#' || targets[i][0] == '&') {
-            sendPrivmsgToChannel(client, targets[i], message);
+            sendPrivmsgToChannel(client, targets[i].erase(0, 1), message);
         } else {
             sendPrivmsgToUser(client, targets[i], message);
         }
@@ -52,7 +52,7 @@ void IrcServer::privateMsg(Client* client, std::vector<std::string>& allparams) 
 std::string IrcServer::buildPrivmsg(Client* sender, const std::string& target
     , const std::vector<std::string>& allparams) {
     std::ostringstream ss;
-    ss << ":" << sender->genHostMask() << " PRIVMSG " << target << " :";
+    ss << ":" << sender->genHostMask() << " PRIVMSG " << target << " ";
     for (size_t i = 1; i < allparams.size(); ++i) {
         ss << allparams[i];
         if (i + 1 != allparams.size()) ss << " ";

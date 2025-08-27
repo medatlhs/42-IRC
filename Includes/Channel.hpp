@@ -12,6 +12,7 @@ class Channel {
         bool        _inviteOnly;
         int         _membersLimit;
         int         _membersCount;
+        std::string _key;
         // 
         std::map<std::string, Client*> _members;
         std::map<std::string, Client*> _invited;
@@ -24,7 +25,9 @@ class Channel {
         bool         isPrivateChannel();
         int          getLimit();
         int          getMembersCount();
-
+        
+        std::string& getKey();
+        void         setKey(const std::string &key);
         // Membership Checks
         bool isUserInChannel(Client* client);
         bool isUserInvited(Client* client);
