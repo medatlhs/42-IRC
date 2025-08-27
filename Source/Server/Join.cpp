@@ -31,14 +31,6 @@ void IrcServer::handleJoinExisting(Channel* channel, Client* client, const std::
     channel->broadcast(client, fullMessage, true); // TODO RPL_TOPIC RPL_NAMREPLY
 }
 
-bool IrcServer::channelExists(const std::string &channelname) {
-    return _allChannels.find(channelname) != _allChannels.end();
-}
-
-bool IrcServer::isValidChannelName(const std::string& name) {
-    return (name[0] == '#' || name[0] == '&');
-}
-
 void IrcServer::channelManager(Client *client, std::vector<std::string> &allparams) {
     std::string cmd = "JOIN";
     if (allparams.size() > 2)
@@ -51,7 +43,6 @@ void IrcServer::channelManager(Client *client, std::vector<std::string> &allpara
     while (++i < channels.size()) {
         std::string &chanName = channels[i];
         if (chanName.empty()) continue;
-
         if (!isValidChannelName(chanName)) {
             numericReply(client, ERR_NOSUCHCHANNEL, chanName, msg_no_such_channel);
             continue;
@@ -68,3 +59,10 @@ void IrcServer::channelManager(Client *client, std::vector<std::string> &allpara
     }
 }
 
+bool IrcServer::channelExists(const std::string &channelname) {
+    return _allChannels.find(channelname) != _allChannels.end();
+}
+
+bool IrcServer::isValidChannelName(const std::string& name) {
+    return (name[0] == '#' || name[0] == '&');
+}

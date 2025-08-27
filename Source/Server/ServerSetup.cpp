@@ -53,11 +53,9 @@ void IrcServer::handleNewConnection() {
 }
 
 void IrcServer::startAccepting() {
-    
     FD_SET(_servSockfd, &_masterSet);
     _highestfd = _servSockfd;
-    while (true) 
-    {
+    while (true) {
         fd_set readReady = _masterSet;
         fd_set writeReady = _masterSet;
         int nreadyfds = select(_highestfd + 1, &readReady, &writeReady, nullptr, 0);
@@ -65,7 +63,6 @@ void IrcServer::startAccepting() {
             std::cerr << "select failed! Errno: " << std::strerror(errno);
             continue ;
         }
-
         for (size_t fd = 0; fd <= _highestfd; ++fd) {
             if (FD_ISSET(fd, &readReady)) {
                 if (fd == (size_t)_servSockfd) handleNewConnection();

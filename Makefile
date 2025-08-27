@@ -2,7 +2,7 @@
 SRC = main.cpp \
 		Source/Channel.cpp \
 		Source/Client.cpp \
-		Source/Server/ClientLogic.cpp \
+		Source/Server/client_logic.cpp \
 		Source/Server/message_parser.cpp \
 		Source/Server/ServerReplies.cpp \
 		Source/Server/ServerSetup.cpp \

@@ -3,7 +3,6 @@
 # include "../../Includes/Channel.hpp"
 # include "../../Includes/Client.hpp"
 
-
 bool IrcServer::checkNickTaken(const std::string &nick) {
     std::map<std::string, Client *>::iterator it;
     for (it = _clientsByNick.begin(); it != _clientsByNick.end(); it++)

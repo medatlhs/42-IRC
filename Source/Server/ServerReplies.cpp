@@ -3,6 +3,30 @@
 # include "../../Includes/Channel.hpp"
 # include "../../Includes/Client.hpp"
 
+void IrcServer::sendQueuedData(int clientSock) {
+    Client *client = this->getClientByfd(clientSock);
+    if (!client || !client->_dataWaiting) return;
+    while (true) {
+        size_t pos = client->getQueueBuffer().find("\r\n");
+        if (pos == std::string::npos) 
+            break ;
+        std::string completeReply = client->getQueueBuffer().substr(0, pos);
+        completeReply.append("\r\n");
+        const char *data = completeReply.c_str();
+        size_t totalSent = 0;
+        while (totalSent < completeReply.size()) {
+            // int bytesSent = send(clientSock, data + totalSent, completeReply.size() - totalSent, 0);
+            int bytesSent = send(clientSock, data + totalSent, 1, 0);
+            if (bytesSent <= 0)
+                return std::cerr << std::strerror(errno) << std::endl, void();
+            totalSent += bytesSent;
+            usleep(10000);
+        }
+        client->getQueueBuffer().erase(0, pos + 2);
+    }
+    if (client->getQueueBuffer().empty()) client->_dataWaiting = false;
+}
+
 void IrcServer::numericReply(Client *client, int code, std::string params, std::string msj) {
     std::stringstream ss;
     std::string numericCode = std::to_string(code);
