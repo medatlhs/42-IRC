@@ -9,6 +9,9 @@
 # include <vector>
 # include <unistd.h>
 # include <sstream>
+# include <cstring>
+# include <bits/stdc++.h> // to convert int to string
+# include <cerrno>
 # include "./replyCodes.hpp"
 
 class Client;

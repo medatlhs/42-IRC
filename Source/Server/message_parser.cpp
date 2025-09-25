@@ -37,13 +37,12 @@ void IrcServer::parseMessage(Client *client) {
 }
 
 void IrcServer::handleComingData(int clientSock) {
-    char buffer[1024];
-    std::memset(buffer, 0, sizeof(buffer));
+    char buffer[1024] = {0};
     int recvBytes = recv(clientSock, buffer, sizeof(buffer), 0);
     if (!recvBytes) {
         clientDisconnected(clientSock);
     } else if (recvBytes < 0)
-        return std::cerr << "recv failed! Errno: " << std::strerror(errno), void();
+        return std::cerr << "recv failed! Errno: " << strerror(errno), void();
     else {
         Client *client = this->getClientByfd(clientSock);
         if (!client) 

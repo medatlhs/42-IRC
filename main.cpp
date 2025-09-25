@@ -4,7 +4,7 @@ int main(int ac, char **av) {
     if (ac != 2) 
         return 1;
     std::stringstream ss(av[1]);
-    int port;
+    int port = 6667;
     ss >> port;
     IrcServer myIrcServer(port, "123");
     try {

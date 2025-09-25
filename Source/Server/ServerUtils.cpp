@@ -26,7 +26,7 @@ Client *IrcServer::getClientByfd(int clientSock) {
     for (it = _clientsBySock.begin(); it != _clientsBySock.end(); it++)
         if (it->first == clientSock)
             return it->second;
-    return nullptr;
+    return 0;
 }
 
 Client *IrcServer::getClientByNick(const std::string&nick) {
@@ -37,7 +37,7 @@ Client *IrcServer::getClientByNick(const std::string&nick) {
     } catch(const std::exception &e) {
         std::cout << "clientbynick\n";
         std::cerr << e.what() << std::endl;
-        return nullptr;
+        return 0;
     }
 }
 
@@ -47,6 +47,6 @@ Channel *IrcServer::getChannel(const std::string &channelname) {
         return channel;
     } catch(const std::exception& e) {
         std::cerr << e.what() << '\n';
-        return nullptr;
+        return 0;
     }
 }

@@ -20,31 +20,54 @@ void IrcServer::sendQueuedData(int clientSock) {
             if (bytesSent <= 0)
                 return std::cerr << std::strerror(errno) << std::endl, void();
             totalSent += bytesSent;
-            usleep(10000);
+            // usleep(10000);
         }
         client->getQueueBuffer().erase(0, pos + 2);
     }
     if (client->getQueueBuffer().empty()) client->_dataWaiting = false;
 }
 
+// void IrcServer::numericReply(Client *client, int code, std::string params, std::string msj) {
+//     std::stringstream ss;
+//     ss << code;
+//     std::string numericCode = ss.str();
+//     if (code < 10) numericCode = "00" + ss.str();
+//     else if (code < 100) numericCode = "0" + ss.str();
+//     ss.clear();
+//     ss  << ":" << _servname << " " << numericCode << " " << client->getNickName();
+//     if (!params.empty()) ss << " ";
+//     ss << params << " :" << msj << "\r\n";
+//     client->setQueueBuffer(ss.str());
+// }
+// void IrcServer::sendWelcomeMsg(Client *client) {
+//     std::string fullMsg001 = "Welcome to the internet relay chat " + client->genHostMask();
+//     numericReply(client, 1, "", fullMsg001);
+//     std::string fullMsg002 = "Your host is localhost, running version 1.0 beta";
+//     numericReply(client, 2, "", fullMsg002);
+//     std::string fullMsg003 = "This server was created 15 Aug 2025 at 22:00:00";
+//     numericReply(client, 3, "", fullMsg003);
+// }
+
 void IrcServer::numericReply(Client *client, int code, std::string params, std::string msj) {
-    std::stringstream ss;
-    std::string numericCode = std::to_string(code);
-    if (code < 10) numericCode = "00" + std::to_string(code);
-    else if (code < 100) numericCode = "0" + std::to_string(code);
-    ss  << ":" << _servname << " " << numericCode << " " << client->getNickName();
-    if (!params.empty()) ss << " ";
-    ss << params << " :" << msj << "\r\n";
+    std::stringstream ss, ss2;
+    ss2 << code;
+    std::string numericCode = ss2.str();
+    if (numericCode.size() == 1) numericCode = "00" + numericCode;
+    else if (numericCode.size() == 2) numericCode = "0" + numericCode;
+    ss << ":" << _servname << " " << numericCode << " " << client->getNickName();
+    if (!params.empty()) ss << " " << params;
+    ss << " :" << msj << "\r\n";
     client->setQueueBuffer(ss.str());
 }
+
 void IrcServer::sendWelcomeMsg(Client *client) {
-    std::string fullMsg001 = "Welcome to the internet relay chat " + client->genHostMask();
-    numericReply(client, 1, "", fullMsg001);
-    std::string fullMsg002 = "Your host is localhost, running version 1.0 beta";
-    numericReply(client, 2, "", fullMsg002);
-    std::string fullMsg003 = "This server was created 15 Aug 2025 at 22:00:00";
-    numericReply(client, 3, "", fullMsg003);
+    numericReply(client, 1, "", "Welcome to the Internet Relay Chat " + client->genHostMask());
+    numericReply(client, 2, "", "Your host is localhost, running version 1.0 beta");
+    numericReply(client, 3, "", "This server was created 15 Aug 2025 at 22:00:00");
+    numericReply(client, 4, "irc-server 1.0", "o o");
 }
+
+
 
 void IrcServer::displayAllInfo(Client *client) {
     std::cout << "---------------------------------------\n";

@@ -54,11 +54,14 @@ void IrcServer::handleNewConnection() {
 
 void IrcServer::startAccepting() {
     FD_SET(_servSockfd, &_masterSet);
+    fd_set readReady, writeReady;
     _highestfd = _servSockfd;
     while (true) {
-        fd_set readReady = _masterSet;
-        fd_set writeReady = _masterSet;
-        int nreadyfds = select(_highestfd + 1, &readReady, &writeReady, nullptr, 0);
+        FD_ZERO(&readReady);
+        FD_ZERO(&writeReady);
+        readReady = _masterSet;
+        writeReady = _masterSet;
+        int nreadyfds = select(_highestfd + 1, &readReady, &writeReady, 0, 0);
         if (nreadyfds == -1) {
             std::cerr << "select failed! Errno: " << std::strerror(errno);
             continue ;
